@@ -41,13 +41,13 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
         end
 
     end
-    SavedCent{j}
-    length(SavedCent{j})
-    
-    % print data and centroids route
+
+    % Print data and centroids route
     figure
     plot(Db(1, :), Db(2, :), '+b') % Database
     hold on
+
+    % Centroids
     for j = 1:C
         plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
         hold on

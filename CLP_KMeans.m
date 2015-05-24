@@ -4,6 +4,8 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
 
     indexPerm = randperm(N);
     Cent = Db(:, indexPerm(1:C));
+    LastCent = Cent;
+    threshold = 0.1;
 
     distMin = 100000;
 
@@ -40,12 +42,28 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
 
+        % Check if clusters centroids have been moved
+        haveBeenMoved = false;
+        for j = 1:C
+            if sqDist(LastCent(:, j), Cent(:, j)) > threshold
+                haveBeenMoved = true;
+            end
+        end
+
+        if !haveBeenMoved
+            break;
+        else
+            LastCent = Cent;
+        end 
     end
 
     % Print data and centroids route
     figure
-    plot(Db(1, :), Db(2, :), '+b') % Database
-    hold on
+    format = getFormatFromLabels(Labels);
+    for i = 1:length(Labels)
+        plot(Db(1, i), Db(2, i), format{i}) % Database
+        hold on
+    end
 
     % Centroids
     for j = 1:C
@@ -58,6 +76,17 @@ function d = sqDist(X, Y)
     vec = X-Y;
     d = vec' * vec;
 end
+
+function format = getFormatFromLabels(Labels)
+    Colors = {'+b', '+m', '+g', '+c', '+k', '+y'};
+    format = {};
+
+    for i = 1:length(Labels)
+        format(i) = Colors{mod(Labels(i), length(Colors)) + 1};
+    end
+end
+
+
 
 % Db = [[1,0]', [0,1]', [0, -1]', [-1, -1]'];
 % [Cent, Labels] = CLP_KMeans(Db, 2)

@@ -1,4 +1,4 @@
-function [Cent, Labels] = CLP_KMeans(Db, C)
+function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     N = length(Db);
     Labels = zeros(N, 1);
 
@@ -11,6 +11,9 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
 
     for j = 1:C
         SavedCent{j} = Cent(:, j);
+
+        % Initialize variances to a identity matrix
+        Variances{j} = eye(length(Db(:, 1)));
     end
 
     for a = 1:100
@@ -27,7 +30,7 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
             end
         end
 
-        % Recalcule Cluster centroids
+        %%%%% Recalcule Cluster centroids %%%%%
         Cent = zeros(length(Db(:, 1)), C);
         itemsInClass = zeros(C, 1);
 
@@ -42,7 +45,20 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
 
-        % Check if clusters centroids have been moved
+        %%%%% Recalculate Cluster Variances %%%%%
+        for j = 1:C
+            Variances{j} = zeros(length(Db(:, 1)));
+        end
+
+        for i = 1:N
+            Variances{Labels(i)} += (Db(:, i) - Cent(:, Labels(i))) * (Db(:, i) - Cent(:, Labels(i)))';
+        end
+
+        for j = 1:C
+            Variances{j} = Variances{j} ./ itemsInClass(j);
+        end
+
+        %%%%% Check if clusters centroids have been moved %%%%%
         haveBeenMoved = false;
         for j = 1:C
             if sqDist(LastCent(:, j), Cent(:, j)) > threshold
@@ -56,6 +72,8 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
             LastCent = Cent;
         end 
     end
+    
+    printf("There has been %d iterations before algorithm converged\n", a);
 
     % Print data and centroids route
     figure
@@ -65,7 +83,7 @@ function [Cent, Labels] = CLP_KMeans(Db, C)
         hold on
     end
 
-    % Centroids
+    % Print Centroids
     for j = 1:C
         plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
         hold on

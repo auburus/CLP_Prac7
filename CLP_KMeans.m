@@ -1,11 +1,12 @@
 function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
+    tic
     N = length(Db);
     Labels = zeros(N, 1);
 
     indexPerm = randperm(N);
     Cent = Db(:, indexPerm(1:C));
     LastCent = Cent;
-    threshold = 0.1;
+    threshold = 0.00001;
 
     distMin = 100000;
 
@@ -15,9 +16,11 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         % Initialize variances to a identity matrix
         Variances{j} = eye(length(Db(:, 1)));
     end
+    Initialization = toc
 
     for a = 1:100
         % Classify data into clusters
+        tic
         for i = 1:N
             distMin = sqDist(Db(:, i), Cent(:, 1));
             Labels(i) = 1;
@@ -29,8 +32,10 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
                 end
             end
         end
+        ClassifyDataInClusters = toc
 
         %%%%% Recalcule Cluster centroids %%%%%
+        tic
         Cent = zeros(length(Db(:, 1)), C);
         itemsInClass = zeros(C, 1);
 
@@ -44,8 +49,10 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             % Save Centroid position
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
+        RecalculateClusterCentroids = toc
 
         %%%%% Recalculate Cluster Variances %%%%%
+        tic
         for j = 1:C
             Variances{j} = zeros(length(Db(:, 1)));
         end
@@ -57,8 +64,10 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         for j = 1:C
             Variances{j} = Variances{j} ./ itemsInClass(j);
         end
+        RecalculateClusterVariances = toc
 
         %%%%% Check if clusters centroids have been moved %%%%%
+        tic
         haveBeenMoved = false;
         for j = 1:C
             if sqDist(LastCent(:, j), Cent(:, j)) > threshold
@@ -66,18 +75,20 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             end
         end
 
-        if !haveBeenMoved
+        if ~haveBeenMoved
             break;
         else
             LastCent = Cent;
-        end 
+        end
+        TimeInCheckCentroidesMoved = toc
     end
-    
+    tic   
     printf("There has been %d iterations before algorithm converged\n", a);
-
+    
     % Print data and centroids route
     figure
     format = getFormatFromLabels(Labels);
+
     for i = 1:length(Labels)
         plot(Db(1, i), Db(2, i), format{i}) % Database
         hold on
@@ -88,6 +99,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
         hold on
     end
+    PlotAll = toc
 end
 
 function d = sqDist(X, Y)

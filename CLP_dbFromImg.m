@@ -7,7 +7,7 @@ function [Db] = CLP_dbFromImg(name)
             % Unable to test this case, because I 
             % haven't found an image which enters here
             Im = ind2rgb(X, map);
-            printf("Is not empty :D");
+            printf('Is not empty :D');
         else
             % So, image have it's RGB values in the columns
             % An image 512 x 512 returns an X of [512, 1536]
@@ -15,7 +15,8 @@ function [Db] = CLP_dbFromImg(name)
             size(X)
             
             for i = 1:3
-                Db(i, :) = X(:, :, i)'(:);
+                A = X(:, :, i)';
+                Db(i, :) = A(:);
             end
             size(Db)
         end

@@ -1,5 +1,4 @@
 function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
-%     tic
     N = length(Db);
     Labels = zeros(N, 1);
 
@@ -16,60 +15,62 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         % Initialize variances to a identity matrix
         Variances{j} = eye(length(Db(:, 1)));
     end
-%     Initialization = toc
 
     for a = 1:100
-        % Classify data into clusters
+        %%%%% Classify data into clusters %%%%%
         tic
         for i = 1:N
-            distMin = sqDist(Db(:, i), Cent(:, 1));
-            Labels(i) = 1;
-
-            for j = 1:C
-                if sqDist(Db(:, i), Cent(:, j)) < distMin
-                    distMin = sqDist(Db(:, i), Cent(:, j));
-                    Labels(i) = j;
-                end
-            end
+            [A, B] = min( sum(bsxfun(@minus, Db(:, i), Cent).^2));
+            Labels(i) = B;
         end
-%         ClassifyDataInClusters = toc
+        ClassifyInClusters = toc
 
         %%%%% Recalcule Cluster centroids %%%%%
-%         tic
+        %tic
         Cent = zeros(length(Db(:, 1)), C);
         itemsInClass = zeros(C, 1);
 
-        for i = 1:N
-            Cent(:, Labels(i)) = Cent(:, Labels(i)) + Db(:, i);
-            itemsInClass(Labels(i)) = itemsInClass(Labels(i)) + 1;
+        for j = 1:C
+            itemsInClass(j) = sum(Labels == j);
+            if itemsInClass(j) ~= 0
+                Cent(:, j) = sum(Db(:, Labels == j)')' ./ itemsInClass(j);
+            end
+            SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
      
-        for j = 1:C
-            if itemsInClass(j) ~= 0
-                Cent(:, j) = Cent(:, j) ./ itemsInClass(j);
-                % Save Centroid position
-                SavedCent{j} = [SavedCent{j}, Cent(:, j)];
-            end
-        end
-%         RecalculateClusterCentroids = toc
+        %RecalculateClusterCentroids = toc
 
-        %%%%% Recalculate Cluster Variances %%%%%
-%         tic
-        for j = 1:C
-            Variances{j} = zeros(length(Db(:, 1)));
-        end
+        %%%%% Recalculate Cluster Variances %%%%% (Don't do it for now)
+        tic
+        if(true)
+            %%%% Optimized version %%%%% (about 50% faster)
+            %for j = 1:C
+            %    if itemsInClass(j) ~= 0
+            %        Variances{j} = zeros(length(Db(:, 1)));
+            %        Aux = bsxfun(@minus, Db(:, Labels == j), Cent(:, j));
+            %        for i = 1:itemsInClass(j)
+            %            Variances{j} = Variances{j} + Aux(:, i) * Aux(:, i)';
+            %        end
 
-        for i = 1:N
-            Variances{Labels(i)} = Variances{Labels(i)} + (Db(:, i) - Cent(:, Labels(i))) * (Db(:, i) - Cent(:, Labels(i)))';
-        end
+            %        Variances{j} = Variances{j} ./ itemsInClass(j);
+            %    end
+            %end
+            
+            %%%%% Normal version %%%%%
+            %for i = 1:N
+            %    Variances{Labels(i)} = Variances{Labels(i)} + (Db(:, i) - Cent(:, Labels(i))) * (Db(:, i) - Cent(:, Labels(i)))';
+            %end
 
-        for j = 1:C
-            Variances{j} = Variances{j} ./ itemsInClass(j);
+            %for j = 1:C
+            %    if itemsInClass(j) ~= 0
+            %        Variances{j} = Variances{j} ./ itemsInClass(j);
+            %    end
+            %end
         end
-%         RecalculateClusterVariances = toc
+        RecalculateClusterVariances = toc
 
         %%%%% Check if clusters centroids have been moved %%%%%
-%         tic
+        %tic
         haveBeenMoved = false;
         for j = 1:C
             if sqDist(LastCent(:, j), Cent(:, j)) > threshold
@@ -82,7 +83,8 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         else
             LastCent = Cent;
         end
-%         TimeInCheckCentroidesMoved = toc
+        %TimeInCheckCentroidesMoved = toc
+        %return
     end
 %     tic   
     fprintf('There has been %d iterations before algorithm converged\n', a);

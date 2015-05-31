@@ -42,30 +42,8 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
         %%%%% Recalculate Cluster Variances %%%%% (Don't do it for now)
         tic
-        if(true)
-            %%%% Optimized version %%%%% (about 50% faster)
-            %for j = 1:C
-            %    if itemsInClass(j) ~= 0
-            %        Variances{j} = zeros(length(Db(:, 1)));
-            %        Aux = bsxfun(@minus, Db(:, Labels == j), Cent(:, j));
-            %        for i = 1:itemsInClass(j)
-            %            Variances{j} = Variances{j} + Aux(:, i) * Aux(:, i)';
-            %        end
-
-            %        Variances{j} = Variances{j} ./ itemsInClass(j);
-            %    end
-            %end
-            
-            %%%%% Normal version %%%%%
-            %for i = 1:N
-            %    Variances{Labels(i)} = Variances{Labels(i)} + (Db(:, i) - Cent(:, Labels(i))) * (Db(:, i) - Cent(:, Labels(i)))';
-            %end
-
-            %for j = 1:C
-            %    if itemsInClass(j) ~= 0
-            %        Variances{j} = Variances{j} ./ itemsInClass(j);
-            %    end
-            %end
+        for j = 1:C
+            Variances{j} = cov(Db(:, Labels == j)');
         end
         RecalculateClusterVariances = toc
 

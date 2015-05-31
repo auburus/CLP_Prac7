@@ -2,7 +2,7 @@ function [Db] = CLP_dbFromImg(name)
     Db = [];
     if exist(name, 'file')
         [X, map] = imread(name);
-
+        size(X)
         if ~isempty(map)
             % Unable to test this case, because I 
             % haven't found an image which enters here

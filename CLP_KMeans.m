@@ -19,14 +19,14 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     for a = 1:100
         %%%%% Classify data into clusters %%%%%
         tic
-        for i = 1:N
-            [A, B] = min( sum(bsxfun(@minus, Db(:, i), Cent).^2));
-            Labels(i) = B;
+        for j = 1:C
+            distances(j,:) = sum(bsxfun(@minus, Db, Cent(:, j)).^2);
         end
+        [A, Labels] = min(distances);
         ClassifyInClusters = toc
 
         %%%%% Recalcule Cluster centroids %%%%%
-        %tic
+        tic
         Cent = zeros(length(Db(:, 1)), C);
         itemsInClass = zeros(C, 1);
 
@@ -37,8 +37,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             end
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
-     
-        %RecalculateClusterCentroids = toc
+        RecalculateClusterCentroids = toc
 
         %%%%% Recalculate Cluster Variances %%%%% (Don't do it for now)
         tic
@@ -48,7 +47,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         RecalculateClusterVariances = toc
 
         %%%%% Check if clusters centroids have been moved %%%%%
-        %tic
+        tic
         haveBeenMoved = false;
         for j = 1:C
             if sqDist(LastCent(:, j), Cent(:, j)) > threshold
@@ -61,7 +60,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         else
             LastCent = Cent;
         end
-        %TimeInCheckCentroidesMoved = toc
+        TimeInCheckCentroidesMoved = toc
         %return
     end
 %     tic   

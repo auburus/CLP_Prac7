@@ -16,17 +16,15 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         Variances{j} = eye(length(Db(:, 1)));
     end
 
+    tic
     for a = 1:100
         %%%%% Classify data into clusters %%%%%
-        %tic
         for j = 1:C
             distances(j,:) = sum(bsxfun(@minus, Db, Cent(:, j)).^2);
         end
         [A, Labels] = min(distances);
-        %ClassifyInClusters = toc
 
         %%%%% Recalcule Cluster centroids %%%%%
-        %tic
         Cent = zeros(length(Db(:, 1)), C);
         itemsInClass = zeros(C, 1);
 
@@ -37,17 +35,13 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             end
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
-        %RecalculateClusterCentroids = toc
 
         %%%%% Recalculate Cluster Variances %%%%% (Don't do it for now)
-        %tic
         for j = 1:C
             Variances{j} = cov(Db(:, Labels == j)');
         end
-        %RecalculateClusterVariances = toc
 
         %%%%% Check if clusters centroids have been moved %%%%%
-        %tic
         haveBeenMoved = false;
         for j = 1:C
             if sqDist(LastCent(:, j), Cent(:, j)) > threshold
@@ -60,13 +54,12 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         else
             LastCent = Cent;
         end
-        %TimeInCheckCentroidesMoved = toc
-        %return
     end
-%     tic   
-    fprintf('There has been %d iterations before algorithm converged\n', a);
+
+    fprintf('There has been %d iterations before algorithm converged in %d seconds\n', a, toc);
     return
-    % Print data and centroids route
+
+    % Print data and centroids route (disable the return to enter this part of code)
     figure
     format = getFormatFromLabels(Labels);
 
@@ -96,9 +89,3 @@ function format = getFormatFromLabels(Labels)
         format{i} = Colors{mod(Labels(i), length(Colors)) + 1};
     end
 end
-
-
-
-% Db = [[1,0]', [0,1]', [0, -1]', [-1, -1]'];
-% [Cent, Labels] = CLP_KMeans(Db, 2)
-

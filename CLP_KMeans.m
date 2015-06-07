@@ -1,8 +1,12 @@
 function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     % Threshold: Value of the square distance to check if a centroid has
     % moved or not
-    threshold = 0.000001;
+    threshold = 0.0001;
 
+    % Cost function:
+    %   0 - Euclidean distance
+    %   1 - Mahalanobis
+    costFunction = 0;
 
     N = length(Db);
     Labels = zeros(N, 1);
@@ -13,6 +17,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     LastCent = Cent;
 
     for j = 1:C
+        % SavedCent is created to plot the Centroides route around the plot
         SavedCent{j} = Cent(:, j);
 
         % Initialize variances to a identity matrix
@@ -25,7 +30,12 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
         %%%%% Classify data into clusters %%%%%
         for j = 1:C
-            distances(j,:) = sum(bsxfun(@minus, Db, Cent(:, j)).^2);
+            switch costFunction
+                case 0 % Euclidean
+                    distances(j, :) = euclidean(Db, Cent(:, j));
+                case 1 % Mahalanobis
+                    distances(j, :) = mahalanobis(Db, Cent(:, j), Variances{j});
+            end
         end
         [A, Labels] = min(distances);
 
@@ -49,7 +59,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         %%%%% Check if clusters centroids have been moved %%%%%
         haveBeenMoved = false;
         for j = 1:C
-            if sqDist(LastCent(:, j), Cent(:, j)) > threshold
+            if euclidean(LastCent(:, j), Cent(:, j)) > threshold
                 haveBeenMoved = true;
             end
         end
@@ -61,7 +71,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         end
     end
 
-    fprintf('There has been %d iterations before algorithm converged in %d seconds\n', a, toc);
+    fprintf('There has been %d iterations before algorithm converged in %f seconds\n', a, toc);
 
     % Print data and centroids route
     if (length(Db(:, 1)) == 2)
@@ -81,7 +91,19 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     end
 end
 
-function d = sqDist(X, Y)
-    vec = X-Y;
-    d = vec' * vec;
+% Returns a row vector with the euclidean distance between data points
+% and the centroid.
+% Vectors in data and centroid MUST be a column vector
+function d = euclidean(Data, Centroid)
+    d = sum(bsxfun(@minus, Data, Centroid).^2);
 end
+
+% Returns a row vector with the mahalanobis distance between data points
+% and the centroid.
+% Vectors in data and centroid MUST be a column vector
+function d = mahalanobis(Data, Centroid, Cov)
+    Aux = num2cell(bsxfun(@minus, Data, Centroid), 1);
+    InvCov = inv(Cov);
+    d = cellfun(@(Vec) Vec' * InvCov * Vec, Aux);
+end
+

@@ -1,7 +1,8 @@
 function [Db, C] = CLP_getDb(N)
     Centers = [[1, 1]', [1, -1]', [-1, -1]', [-1, 1]'];
     C = length(Centers);
-    sigma = [0.5 0.75 0.4 0.3];
+    % sigma = [0.5 0.75 0.4 0.3];
+    sigma = [0.5 0.5 0.5 0.5];
 
     % Elements of each class
     Labels = randi(C, N, 1);

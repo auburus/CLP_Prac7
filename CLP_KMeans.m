@@ -88,6 +88,20 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
             hold on
         end
+    elseif (length(Db(:, 1)) == 3)
+        figure
+         
+        Colors = {'+b', '+m', '+g', '+c', '+k', '+y'};
+
+        for j = 1:C
+            Aux = Db(:, Labels == j);
+            plot3(Aux(1, :), Aux(2, :), Aux(3, :), Colors{mod(j-1, length(Colors)) +1});
+            hold on
+
+            % Print Centroids
+            plot3(SavedCent{j}(1, :), SavedCent{j}(2, :), SavedCent{j}(3, :), '*-r')
+            hold on
+        end
     end
 end
 

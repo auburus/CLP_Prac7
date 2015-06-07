@@ -1,13 +1,16 @@
 function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
+    % Threshold: Value of the square distance to check if a centroid has
+    % moved or not
+    threshold = 0.000001;
+
+
     N = length(Db);
     Labels = zeros(N, 1);
-
+    
+    % Initialize Centroids
     indexPerm = randperm(N);
     Cent = Db(:, indexPerm(1:C));
     LastCent = Cent;
-    threshold = 1;
-
-    distMin = 100000;
 
     for j = 1:C
         SavedCent{j} = Cent(:, j);
@@ -18,6 +21,8 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
     tic
     for a = 1:100
+        fprintf("Iteration %d\n", a);
+
         %%%%% Classify data into clusters %%%%%
         for j = 1:C
             distances(j,:) = sum(bsxfun(@minus, Db, Cent(:, j)).^2);
@@ -57,35 +62,26 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     end
 
     fprintf('There has been %d iterations before algorithm converged in %d seconds\n', a, toc);
-    return
 
-    % Print data and centroids route (disable the return to enter this part of code)
-    figure
-    format = getFormatFromLabels(Labels);
+    % Print data and centroids route
+    if (length(Db(:, 1)) == 2)
+        figure
 
-    for i = 1:length(Labels)
-        plot(Db(1, i), Db(2, i), format{i}) % Database
-        hold on
+        Colors = {'+b', '+m', '+g', '+c', '+k', '+y'};
+        for j = 1:C
+            % Print points
+            Aux = Db(:, Labels == j);
+            plot(Aux(1, :), Aux(2, :), Colors{mod(j-1, length(Colors)) + 1});
+            hold on
+
+            % Print Centroids
+            plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
+            hold on
+        end
     end
-
-    % Print Centroids
-    for j = 1:C
-        plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
-        hold on
-    end
-%     PlotAll = toc
 end
 
 function d = sqDist(X, Y)
     vec = X-Y;
     d = vec' * vec;
-end
-
-function format = getFormatFromLabels(Labels)
-    Colors = {'+b', '+m', '+g', '+c', '+k', '+y'};
-    format = {};
-
-    for i = 1:length(Labels)
-        format{i} = Colors{mod(Labels(i), length(Colors)) + 1};
-    end
 end

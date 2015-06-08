@@ -20,6 +20,7 @@ function [Img] = CLP_ImgFromLabels(Cent, Labels, Width)
     for i = 1:length(Labels)/Width
         Img(i, :, :) = RowImg((Width*(i-1) + 1):Width*i , :);
     end
+    figure
     image(Img);
 end
 

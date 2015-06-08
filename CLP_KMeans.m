@@ -3,11 +3,17 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     % moved or not
     threshold = 0.0001;
 
-    % Cost function:
+    % Dist function:
     %   0 - Euclidean distance
     %   1 - Mahalanobis
-    costFunction = 0;
+    %   2 - Gaussian (ie, euclidean divided by sqrt(det(Cov)) )
+    distFunction = 0;
 
+    % Plot points
+    plotPoints = 0;
+
+
+    %%%%%%%%%%%%%%%%%%%%%%%%
     N = length(Db);
     Labels = zeros(N, 1);
     
@@ -15,6 +21,9 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     indexPerm = randperm(N);
     Cent = Db(:, indexPerm(1:C));
     LastCent = Cent;
+
+    % Initialize mean distance
+    meanDist = [];
 
     for j = 1:C
         % SavedCent is created to plot the Centroides route around the plot
@@ -30,14 +39,17 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
         %%%%% Classify data into clusters %%%%%
         for j = 1:C
-            switch costFunction
+            switch distFunction
                 case 0 % Euclidean
                     distances(j, :) = euclidean(Db, Cent(:, j));
                 case 1 % Mahalanobis
                     distances(j, :) = mahalanobis(Db, Cent(:, j), Variances{j});
+                case 2 % Gaussian
+                    distances(j, :) = gaussian(Db, Cent(:, j), Variances{j});
             end
         end
-        [A, Labels] = min(distances);
+        [MinDist, Labels] = min(distances);
+        meanDist = [meanDist, mean(MinDist)];
 
         %%%%% Recalcule Cluster centroids %%%%%
         Cent = zeros(length(Db(:, 1)), C);
@@ -51,7 +63,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
 
-        %%%%% Recalculate Cluster Variances %%%%% (Don't do it for now)
+        %%%%% Recalculate Cluster Variances %%%%% 
         for j = 1:C
             Variances{j} = cov(Db(:, Labels == j)');
         end
@@ -74,7 +86,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
     fprintf('There has been %d iterations before algorithm converged in %f seconds\n', a, toc);
 
     % Print data and centroids route
-    if (length(Db(:, 1)) == 2)
+    if (plotPoints && length(Db(:, 1)) == 2)
         figure
 
         Colors = {'+b', '+m', '+g', '+c', '+k', '+y'};
@@ -88,7 +100,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             plot(SavedCent{j}(1, :), SavedCent{j}(2, :), '*-r')
             hold on
         end
-    elseif (length(Db(:, 1)) == 3)
+    elseif (plotPoints && length(Db(:, 1)) == 3)
         figure
          
         Colors = {'+b', '+m', '+g', '+c', '+k', '+y'};
@@ -103,6 +115,11 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             hold on
         end
     end
+
+    % Plot meandist graph
+    figure
+    plot(1:length(meanDist), meanDist, 'b');
+
 end
 
 % Returns a row vector with the euclidean distance between data points
@@ -121,3 +138,15 @@ function d = mahalanobis(Data, Centroid, Cov)
     d = cellfun(@(Vec) Vec' * InvCov * Vec, Aux);
 end
 
+function d = gaussian(Data, Centroid, Cov)
+    aux = sqrt(det(Cov));
+    if aux > 0.1
+        aux = 1/aux;
+    else
+        % so, if singular matrix, fallback to euclidean
+        aux = 1;
+    end
+
+    d = euclidean(Data, Centroid);
+    d = d ./ aux;
+end

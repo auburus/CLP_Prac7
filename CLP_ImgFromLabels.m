@@ -13,19 +13,30 @@ function [Img] = CLP_ImgFromLabels(Cent, Labels, Width)
     for j = classes
         RowImg(:, Labels == j) = repmat(NormalizedCent(:, j), 1, sum(Labels == j));
     end
+    
+    % Show descomposition
+    for i = 1:3
+        Aux = [zeros(i-1, length(Labels)); RowImg(i, :); zeros(3-i, length(Labels))]';
 
-    RowImg = [zeros(2, length(Labels)); RowImg(3, :); zeros(0, length(Labels))];
+        % Transform the matrix [N,3] to [N/Width, Width, 3]
+        Img = zeros(length(Labels)/Width, Width, 3);
+        for i = 1:length(Labels)/Width
+            Img(i, :, :) = Aux((Width*(i-1) + 1):Width*i , :);
+        end
 
+        figure
+        image(Img);
+    end
+
+    % show image
     RowImg = RowImg';
-
-    % Transform the matrix [N,3] to [N/Width, Width, 3]
     Img = zeros(length(Labels)/Width, Width, 3);
     for i = 1:length(Labels)/Width
         Img(i, :, :) = RowImg((Width*(i-1) + 1):Width*i , :);
     end
 
-    % Show the image
     figure
     image(Img);
+
 end
 

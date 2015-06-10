@@ -13,8 +13,10 @@ function [Img] = CLP_ImgFromLabels(Cent, Labels, Width)
     for j = classes
         RowImg(:, Labels == j) = repmat(NormalizedCent(:, j), 1, sum(Labels == j));
     end
-    RowImg = RowImg';
 
+    RowImg = [zeros(2, length(Labels)); RowImg(3, :); zeros(0, length(Labels))];
+
+    RowImg = RowImg';
 
     % Transform the matrix [N,3] to [N/Width, Width, 3]
     Img = zeros(length(Labels)/Width, Width, 3);

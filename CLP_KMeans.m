@@ -79,7 +79,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         for j = 1:C
             if itemsInClass(j) > 0
                 Variances{j} = cov(Db(:, Labels == j)');
-                if cond(Variances{j}) > 1e15)
+                if cond(Variances{j}) > 1e15
                     Variances{j} = LastVariances{j};
                 end
             end

@@ -75,8 +75,6 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
         end
 
-        itemsInClass
-
         %%%%% Recalculate Cluster Variances %%%%% 
         for j = 1:C
             if itemsInClass(j) > 0

@@ -9,17 +9,20 @@ function [Img] = CLP_ImgFromLabels(Cent, Labels, Width)
 
     NormalizedCent = Cent ./ 255;
 
-    % substitute each Label for it's centroid
+    % Substitute each label for its centroid
     for j = classes
         RowImg(:, Labels == j) = repmat(NormalizedCent(:, j), 1, sum(Labels == j));
     end
     RowImg = RowImg';
+
+
+    % Transform the matrix [N,3] to [N/Width, Width, 3]
     Img = zeros(length(Labels)/Width, Width, 3);
-    
-    % Transform the matrix Nx3 to N/Width, Width 3
     for i = 1:length(Labels)/Width
         Img(i, :, :) = RowImg((Width*(i-1) + 1):Width*i , :);
     end
+
+    % Show the image
     figure
     image(Img);
 end

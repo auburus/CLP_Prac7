@@ -1,13 +1,16 @@
 function [Db, width] = CLP_dbFromImg(name)
     Db = [];
+
     if exist(name, 'file')
         [X, map] = imread(name);
         [height, width, depth] = size(X);
+
         if ~isempty(map)
-            % Unable to test this case, because I 
-            % haven't found an image which enters here
+            % Case for images with an information map. 
+            % At the time of writting this, it hasn't been
+            % used in any image.
+
             Im = ind2rgb(X, map);
-            printf('Is not empty :D');
         else
             % So, image have it's RGB values in the depth
             % An image 512 x 512 returns an X of [512, 512, 3]

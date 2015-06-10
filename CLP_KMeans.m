@@ -5,25 +5,25 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
     % Dist function:
     %   0 - Euclidean distance
-    %   1 - Mahalanobis
-    %   2 - Gaussian (ie, euclidean divided by sqrt(det(Cov)) )
-    distFunction = 0;
+    %   1 - Mahalanobis (DEPRECATED)
+    %   2 - Gaussian (ie, exp(mahalanobis) divided by sqrt(det(Cov)) )
+    distType = 0;
 
     % Plot points
     plotPoints = 1;
 
 
     %%%%%%%%%%%%%%%%%%%%%%%%
-    N = length(Db);
-    Labels = zeros(N, 1);
+    Labels = zeros(length(Db), 1);
     
     % Initialize Centroids
-    indexPerm = randperm(N);
-    Cent = Db(:, indexPerm(1:C));
-    LastCent = Cent;
+    Aux = unique(Db', 'rows')';
+    indexPerm = randperm(length(Aux));
+    Cent = Aux(:, indexPerm(1:C));
+    % Cent = Aux(:, 1:C);
 
     % Initialize variances
-    Variances = cell(C);
+    % Variances = cell(C);
 
     % Initialize mean distance
     meanDist = [];
@@ -32,17 +32,19 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
         % SavedCent is created to plot the Centroides route around the plot
         SavedCent{j} = Cent(:, j);
 
-        % Initialize variances to a identity matrix
+       % Initialize variances to a identity matrix
         Variances{j} = eye(length(Db(:, 1)));
     end
+    LastCent = Cent;
+    LastVariances = Variances;
 
     tic
     for a = 1:100
-        fprintf("Iteration %d\n", a);
+        fprintf('Iteration %d\n', a);
 
         %%%%% Classify data into clusters %%%%%
         for j = 1:C
-            switch distFunction
+            switch distType
                 case 0 % Euclidean
                     distances(j, :) = euclidean(Db, Cent(:, j));
                 case 1 % Mahalanobis
@@ -51,7 +53,14 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
                     distances(j, :) = gaussian(Db, Cent(:, j), Variances{j});
             end
         end
-        [MinDist, Labels] = min(distances);
+        switch distType
+            case 0
+                [MinDist, Labels] = min(distances);
+            case 1
+                [MinDist, Labels] = max(distances);
+            case 2
+                [MinDist, Labels] = max(distances);
+        end
         meanDist = [meanDist, mean(MinDist)];
 
         %%%%% Recalculate Cluster centroids %%%%%
@@ -60,7 +69,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
         for j = 1:C
             itemsInClass(j) = sum(Labels == j);
-            if itemsInClass(j) ~= 0
+            if itemsInClass(j) > 0
                 Cent(:, j) = mean(Db(:, Labels == j)')';
             end
             SavedCent{j} = [SavedCent{j}, Cent(:, j)];
@@ -68,14 +77,23 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
 
         %%%%% Recalculate Cluster Variances %%%%% 
         for j = 1:C
-            Variances{j} = cov(Db(:, Labels == j)');
+            if itemsInClass(j) > 0
+                Variances{j} = cov(Db(:, Labels == j)');
+            end
         end
 
-        %%%%% Check if clusters centroids have been moved %%%%%
+        %%%%% Check if clusters centroids have been moved or variances have varied (pun intended)%%%%%
         haveBeenMoved = false;
         for j = 1:C
             if euclidean(LastCent(:, j), Cent(:, j)) > threshold
                 haveBeenMoved = true;
+                break;
+            end
+            
+            Aux = Variances{j} - LastVariances{j};
+            if trace(sqrt(Aux'*Aux)) > threshold
+                haveBeenMoved = true;
+                break;
             end
         end
 
@@ -83,6 +101,7 @@ function [Cent, Labels, Variances] = CLP_KMeans(Db, C)
             break;
         else
             LastCent = Cent;
+            LastVariances = Variances;
         end
     end
 
@@ -138,20 +157,13 @@ end
 function d = mahalanobis(Data, Centroid, Cov)
     Aux = num2cell(bsxfun(@minus, Data, Centroid), 1);
     InvCov = inv(Cov);
+
     d = cellfun(@(Vec) Vec' * InvCov * Vec, Aux);
-    d = sqrt(d);
 end
 
 function d = gaussian(Data, Centroid, Cov)
     aux = sqrt(det(Cov));
-    if aux > 0.1
-        aux = 1/aux;
-    else
-        % so, if singular matrix, fallback to euclidean
-        aux = 1;
-    end
 
-    d = euclidean(Data, Centroid);
-    d = exp((-0.5) * d);
+    d = exp((-0.5) * mahalanobis(Data, Centroid, Cov));
     d = d ./ aux;
 end
